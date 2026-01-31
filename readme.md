@@ -1,164 +1,111 @@
-# Exercise 5.1 – DIY CRD & Controller (DummySite)
+# Exercise 5.2 – Getting Started with Istio Service Mesh
 
-## Overview
-
-This project implements a custom Kubernetes resource **DummySite** and a controller that automatically creates an HTML mirror of any given website URL.
-
-When a `DummySite` object is created, the controller:
-
-1. Watches the Kubernetes API for new DummySite resources
-2. Downloads the HTML from `website_url`
-3. Stores the HTML inside a ConfigMap
-4. Creates an nginx Pod
-5. Mounts the ConfigMap as `/usr/share/nginx/html/index.html`
-6. Serves the copied page
-
-This follows the standard **CRD + Controller (Operator pattern)** inside Kubernetes.
+## Objective
+The goal of this exercise is to install Istio service mesh into a Kubernetes cluster and deploy the official Bookinfo sample application to observe service-to-service communication managed by Istio.
 
 ---
 
-## Architecture
-
-```
-DummySite (CRD)
-      ↓
-Controller (watch)
-      ↓
-Fetch website HTML
-      ↓
-Create ConfigMap
-      ↓
-Create nginx Pod
-      ↓
-Serve copied page
-```
+## Environment
+- Local cluster: k3d
+- Kubernetes: k3s (via k3d)
+- Service Mesh: Istio
+- Mode: Sidecar injection (demo profile)
+- OS: macOS
 
 ---
 
-## Project Structure
+## Steps Performed
 
-```
-dummy-site-crd/
-├─ controller/
-│  ├─ Dockerfile
-│  ├─ index.js
-│  └─ package.json
-│
-├─ manifests/
-│  ├─ crd.yaml
-│  ├─ serviceaccount.yaml
-│  ├─ clusterrole.yaml
-│  ├─ clusterrolebinding.yaml
-│  ├─ deployment.yaml
-│  └─ dummysite.yaml
-│
-└─ images/
-   └─ ex5.2.jpeg
-```
-
----
-
-## Custom Resource Definition
-
-```yaml
-apiVersion: stable.dwk/v1
-kind: DummySite
-metadata:
-  name: example-site
-spec:
-  website_url: "https://example.com"
-```
-
----
-
-## Build Controller Image
-
+### 1. Install Istio CLI
 ```bash
-cd controller
-
-docker buildx build \
-  --platform linux/amd64 \
-  -t razibhasan2/dummy-controller:v1 \
-  --push .
+curl -L https://istio.io/downloadIstio | sh -
+cd istio-*
+export PATH=$PWD/bin:$PATH
 ```
 
----
-
-## Deploy Resources
-
-Apply in this order:
-
+### 2. Install Istio (demo profile)
 ```bash
-kubectl apply -f manifests/crd.yaml
-kubectl apply -f manifests/serviceaccount.yaml
-kubectl apply -f manifests/clusterrole.yaml
-kubectl apply -f manifests/clusterrolebinding.yaml
-kubectl apply -f manifests/deployment.yaml
-kubectl apply -f manifests/dummysite.yaml
+istioctl install --set profile=demo -y
 ```
 
----
-
-## Verify
-
-Check resources:
-
+### 3. Deploy Bookinfo sample app
 ```bash
-kubectl get pod example-site-pod
+kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
 ```
 
-Expected:
-
-![Proof Screenshot for pod](images/ex5.2.1.jpeg)
-
----
-
-## Access Website
-
+### 4. Enable automatic sidecar injection
 ```bash
-kubectl port-forward pod/example-site-pod 8080:80
+kubectl label namespace default istio-injection=enabled
+kubectl delete pods --all
+```
+
+### 5. Verify pods
+```bash
+kubectl get pods
+```
+
+All pods show:
+
+```
+2/2 Running
+```
+
+Meaning:
+- 1 application container
+- 1 istio-proxy sidecar
+
+This confirms the service mesh is active.
+
+### 6. Access application
+```bash
+kubectl port-forward svc/productpage 9080:9080
 ```
 
 Open:
-
 ```
-http://localhost:8080
+http://localhost:9080/productpage
 ```
-
----
-
-## Screenshot Proof
-
-The screenshot below shows:
-
-- Controller running
-- Port forwarding active
-- Website successfully copied and served locally
-
-![Proof Screenshot](images/ex5.2.2.jpeg)
-
----
-
-## Notes
-
-- Only raw HTML is copied (CSS/JS may be missing or broken)
-- This is acceptable according to the assignment instructions
-- The controller demonstrates:
-  - CRD creation
-  - Kubernetes API watch
-  - ConfigMap generation
-  - Pod creation
-  - Automated reconciliation
 
 ---
 
 ## Result
+The Bookinfo web application loads successfully.
+Traffic between services is handled automatically by Istio sidecar proxies.
 
-- DummySite resource created
-- Controller reacts automatically
-- Website HTML mirrored
-- Page accessible via port-forward
+Features verified:
+- Service mesh installed
+- Sidecar injection working
+- Inter-service communication functional
+- Application accessible via port-forward
 
-Exercise requirements successfully completed.
+---
 
-# End
+## Proof Screenshot
+See:
+
+![Proof Screenshot](images/ex5.2.jpeg)
+
+The screenshot shows:
+- Running pods with `2/2`
+- Port-forward command
+- Bookinfo webpage loaded in browser
+
+---
+
+## Cleanup
+```bash
+kubectl delete -f samples/bookinfo/platform/kube/bookinfo.yaml
+istioctl uninstall -y
+kubectl delete namespace istio-system
+```
+
+---
+
+## Conclusion
+Istio successfully provides:
+- Traffic management
+- Observability
+- Automatic sidecar proxies
+- Simplified microservice communication
+
+The service mesh was deployed and verified successfully.
