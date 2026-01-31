@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dummy-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dummy-controller
+  template:
+    metadata:
+      labels:
+        app: dummy-controller
+    spec:
+      serviceAccountName: dummy-controller
+      containers:
+      - name: controller
+        image: razibhasan2/dummy-controller:v1
+        imagePullPolicy: Always

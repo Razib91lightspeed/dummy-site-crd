@@ -1,0 +1,64 @@
+# =========================
+# macOS
+# =========================
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# =========================
+# NodeJS
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# =========================
+# Docker
+# =========================
+.dockerignore
+*.tar
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# Editor / IDE
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+nano
+
+# =========================
+# Environment / secrets
+# =========================
+.env
+.env.*
+*.key
+*.pem
+
+# =========================
+# Build artifacts
+# =========================
+dist/
+build/
+coverage/
+
+# =========================
+# Kubernetes local files
+# =========================
+kubeconfig
+*.kubeconfig
+
+# =========================
+# Misc
+# =========================
+*.bak
+*.old
